@@ -29,6 +29,7 @@ webServer.post("/login", async (req, res) => {
     LOGIN_DATA_KEYS,
     body
   );
+  console.log(body);
 
   if (!isBodyChecked) {
     res.send(`Missing Fields: ${"".concat(missingFields)}`);
@@ -44,10 +45,11 @@ webServer.post("/login", async (req, res) => {
     return;
   }
   // hash password
-  if (!bcrypt.compareSync(body.password, email.password)) {
+  if (!bcrypt.compareSync(body.password, user.password)) {
     res.send("E-Mail or Password invalid");
     return;
   }
+  res.json(body);
   // const returnUser = {
   //   _id: user._id,
   //   name: user.name,
