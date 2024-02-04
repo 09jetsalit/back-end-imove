@@ -5,6 +5,7 @@ import multer from "multer";
 import { ObjectId } from "mongodb";
 import databaseClient from "./services/database.mjs";
 import { checkMissingField } from "./utils/requestUtils.js";
+import bcrypt from "bcrypt";
 
 const HOSTNAME = process.env.SERVER_IP || "127.0.0.1";
 const PORT = process.env.SERVER_PORT || 3000;
@@ -17,54 +18,67 @@ webServer.use(cors());
 webServer.use(express.json());
 
 // code here
+const DATA_KEY_SIGNUP = ["fullName", "email", "password", "gender", "dob", "phoneNumber", "typemem"];
+webServer.post("/signup" , async (req , res) => {
+  let body = req.body;
+  
 
-webServer.get("/", async (req, res) => {
-  res.json("data");
-});
+  const [isChecked , setISsChecked] = checkMissingField(DATA_KEY_SIGNUP,body);
+
+  if (!isChecked) {
+    res.send(`Missing Fields: ${"".concat(setISsChecked)}`);
+    return;
+  };
+
+  const SALT = 10;
+  const saltRound = await bcrypt.genSalt(SALT);
+  body["password"] = await bcrypt.hash(body["password"], saltRound);
+
+  await databaseClient.db().collection("members").insertOne(body);
+
+
+  // be careful this line
+  res.send(body);
+})
 
 webServer.post("/login", async (req, res) => {
   let body = req.body;
-  const LOGIN_DATA_KEYS = ["username", "password"];
-  const [isCheck, missingFields] = checkMissingField(LOGIN_DATA_KEYS, body);
-  if (!isCheck) {
+  const LOGIN_DATA_KEYS = ["email" , "password"]
+  const [isBodyChecked, missingFields] = checkMissingField(
+    LOGIN_DATA_KEYS,
+    body
+  );
+
+  if (!isBodyChecked) {
     res.send(`Missing Fields: ${"".concat(missingFields)}`);
     return;
   }
 
-  const email = await databaseClient
+  const user = await databaseClient
     .db()
     .collection("members")
     .findOne({ email: body.email });
-  if (email === null) {
-    res.status(401).send("User not found");
+  if (user === null) {
+    res.send("User or Password invalid");
     return;
-  } else {
-    res.json(email);
   }
-
-  const isPasswordValid = await bcrypt.compare(body.password, user.password);
-
-  if (!isPasswordValid) {
-    res.status(401).send("Incorrect password");
+  // hash password
+  if (!bcrypt.compareSync(body.password, email.password)) {
+    res.send("E-Mail or Password invalid");
     return;
-  } l
-
-  res.send({ token: createJwt(email) });
-
+  }
+  // const returnUser = {
+  //   _id: user._id,
+  //   name: user.name,
+  //   age: user.age,
+  //   weight: user.weight,
+  // };
+  // res.json(returnUser);
 });
 
-webServer.post('/signup', async (req , res) => {
-  const SIGNUP_DATA_KEY =["fullName", "email", "password", "gender", "dob", "typemem"];
-  const body = req.body;
-  const [isCheckData,setIsCheckData] = checkMissingField(SIGNUP_DATA_KEY,body);
 
-  if (!isCheckData) {
-    res.send(`Missing Fields: ${"".concat(setIsCheckData)}`);
-    return;
-  } else {
-    
-  }
-})
+
+
 
 // initilize web server
 const currentServer = webServer.listen(PORT, HOSTNAME, () => {
