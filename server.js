@@ -6,6 +6,8 @@ import { ObjectId } from "mongodb";
 import databaseClient from "./services/database.mjs";
 import { checkMissingField } from "./utils/requestUtils.js";
 import bcrypt from "bcrypt";
+import signupRoute from "./module/signup.js"
+
 
 const HOSTNAME = process.env.SERVER_IP || "127.0.0.1";
 const PORT = process.env.SERVER_PORT || 3000;
@@ -18,28 +20,7 @@ webServer.use(cors());
 webServer.use(express.json());
 
 // code here
-const DATA_KEY_SIGNUP = ["fullName", "email", "password", "gender", "dob", "phoneNumber", "typemem"];
-webServer.post("/signup" , async (req , res) => {
-  let body = req.body;
-  
-
-  const [isChecked , setISsChecked] = checkMissingField(DATA_KEY_SIGNUP,body);
-
-  if (!isChecked) {
-    res.send(`Missing Fields: ${"".concat(setISsChecked)}`);
-    return;
-  };
-
-  const SALT = 10;
-  const saltRound = await bcrypt.genSalt(SALT);
-  body["password"] = await bcrypt.hash(body["password"], saltRound);
-
-  await databaseClient.db().collection("members").insertOne(body);
-
-
-  // be careful this line
-  res.send(body);
-})
+webServer.post("/signup", signupRoute);
 
 webServer.post("/login", async (req, res) => {
   let body = req.body;
