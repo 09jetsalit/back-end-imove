@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import cors from "cors";
-import express from "express";
+import express, { response } from "express";
 import multer from "multer";
 import { ObjectId } from "mongodb";
 import databaseClient from "./services/database.mjs";
@@ -18,17 +18,53 @@ webServer.use(express.json());
 
 // code here
 
+webServer.get("/", async (req, res) => {
+  res.json("data");
+});
 
+webServer.post("/login", async (req, res) => {
+  let body = req.body;
+  const LOGIN_DATA_KEYS = ["username", "password"];
+  const [isCheck, missingFields] = checkMissingField(LOGIN_DATA_KEYS, body);
+  if (!isCheck) {
+    res.send(`Missing Fields: ${"".concat(missingFields)}`);
+    return;
+  }
 
+  const email = await databaseClient
+    .db()
+    .collection("members")
+    .findOne({ email: body.email });
+  if (email === null) {
+    res.status(401).send("User not found");
+    return;
+  } else {
+    res.json(email);
+  }
 
+  const isPasswordValid = await bcrypt.compare(body.password, user.password);
 
+  if (!isPasswordValid) {
+    res.status(401).send("Incorrect password");
+    return;
+  } l
 
+  res.send({ token: createJwt(email) });
 
+});
 
+webServer.post('/signup', async (req , res) => {
+  const SIGNUP_DATA_KEY =["fullName", "email", "password", "gender", "dob", "typemem"];
+  const body = req.body;
+  const [isCheckData,setIsCheckData] = checkMissingField(SIGNUP_DATA_KEY,body);
 
-
-
-
+  if (!isCheckData) {
+    res.send(`Missing Fields: ${"".concat(setIsCheckData)}`);
+    return;
+  } else {
+    
+  }
+})
 
 // initilize web server
 const currentServer = webServer.listen(PORT, HOSTNAME, () => {
