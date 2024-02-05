@@ -7,6 +7,9 @@ import databaseClient from "./services/database.mjs";
 import { checkMissingField } from "./utils/requestUtils.js";
 import bcrypt from "bcrypt";
 import signupRoute from "./module/signup.js"
+import jwt from "jsonwebtoken";
+
+
 
 
 const HOSTNAME = process.env.SERVER_IP || "127.0.0.1";
@@ -49,14 +52,20 @@ webServer.post("/login", async (req, res) => {
     res.send("E-Mail or Password invalid");
     return;
   }
-  res.json(body);
-  // const returnUser = {
-  //   _id: user._id,
-  //   name: user.name,
-  //   age: user.age,
-  //   weight: user.weight,
-  // };
-  // res.json(returnUser);
+  res.json({ token: createJwt(body.email) });
+
+
+  ///////////////////////////////////////////
+  function createJwt(email) {
+    const jwtSecretKey = process.env.JWT_SECRET_KEY;
+    const data = { email: email }
+    const token = jwt.sign(data, jwtSecretKey, {
+      expiresIn: "7d",
+    });
+  
+    return token;
+  }
+
 });
 
 
