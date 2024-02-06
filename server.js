@@ -8,6 +8,7 @@ import { checkMissingField } from "./utils/requestUtils.js";
 import bcrypt from "bcrypt";
 import signupRoute from "./module/signup.js"
 import jwt from "jsonwebtoken";
+import loginRoute from "./module/login.js";
 
 
 
@@ -25,48 +26,7 @@ webServer.use(express.json());
 // code here
 webServer.post("/signup", signupRoute);
 
-webServer.post("/login", async (req, res) => {
-  let body = req.body;
-  const LOGIN_DATA_KEYS = ["email" , "password"]
-  const [isBodyChecked, missingFields] = checkMissingField(
-    LOGIN_DATA_KEYS,
-    body
-  );
-  console.log(body);
-
-  if (!isBodyChecked) {
-    res.send(`Missing Fields: ${"".concat(missingFields)}`);
-    return;
-  }
-
-  const user = await databaseClient
-    .db()
-    .collection("members")
-    .findOne({ email: body.email });
-  if (user === null) {
-    res.send("User or Password invalid");
-    return;
-  }
-  // hash password
-  if (!bcrypt.compareSync(body.password, user.password)) {
-    res.send("E-Mail or Password invalid");
-    return;
-  }
-  res.json({ token: createJwt(body.email) });
-
-
-  ///////////////////////////////////////////
-  function createJwt(email) {
-    const jwtSecretKey = process.env.JWT_SECRET_KEY;
-    const data = { email: email }
-    const token = jwt.sign(data, jwtSecretKey, {
-      expiresIn: "7d",
-    });
-  
-    return token;
-  }
-
-});
+webServer.post("/login", loginRoute);
 
 
 
